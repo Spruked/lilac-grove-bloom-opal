@@ -1,0 +1,36 @@
+{
+  "url": "http://127.0.0.1:8080/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "RAL Bridge",
+      "hasCanvas": false,
+      "bodyTextLen": 1939,
+      "bodyTextHash": "3eba16698293517db2cbf7808e1d9605d9743d97e6fb1c318c0d45ca9c94dcfb",
+      "bodyTextPrefix": "SKILL-BUS CONTRACT RAL ROS Bridge ROS 2 is the robot. NATS is th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "RAL Bridge",
+      "hasCanvas": false,
+      "bodyTextLen": 1939,
+      "bodyTextHash": "3eba16698293517db2cbf7808e1d9605d9743d97e6fb1c318c0d45ca9c94dcfb",
+      "bodyTextPrefix": "SKILL-BUS CONTRACT RAL ROS Bridge ROS 2 is the robot. NATS is th",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-preview-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-preview.json"
+}

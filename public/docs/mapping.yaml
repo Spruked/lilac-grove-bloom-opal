@@ -1,0 +1,108 @@
+# Source of truth: NATS primitive → ROS interface.
+# The stub refuses anything not listed here.
+
+version: 1
+robot_id_token: "{robot_id}"
+
+nats_to_ros:
+  - primitive_type: twist_base
+    subject: "ral.{robot_id}.cmd.motion.base"
+    ros:
+      kind: topic
+      name: /cmd_vel
+      type: geometry_msgs/msg/Twist
+    coalesce: latest_wins
+    max_hz: 20
+    requires_cycle_id: true
+    bodies: [base]
+
+  - primitive_type: nav_to_pose
+    subject: "ral.{robot_id}.cmd.motion.base"
+    ros:
+      kind: action
+      name: /navigate_to_pose
+      type: nav2_msgs/action/NavigateToPose
+    preempt: true
+    bodies: [base]
+
+  - primitive_type: focus_on
+    subject: "ral.{robot_id}.cmd.motion.head"
+    ros:
+      kind: action
+      name: /head_controller/follow_joint_trajectory
+      type: control_msgs/action/FollowJointTrajectory
+    note: "Bridge receives a look-at frame or joint target already solved. It does not run IK."
+    bodies: [head]
+
+  - primitive_type: arm_follow
+    subject: "ral.{robot_id}.cmd.motion.arm"
+    ros:
+      kind: action
+      name: /arm_controller/follow_joint_trajectory
+      type: control_msgs/action/FollowJointTrajectory
+    preempt: true
+    bodies: [arm]
+
+  - primitive_type: gripper_set
+    subject: "ral.{robot_id}.cmd.motion.gripper"
+    ros:
+      kind: action
+      name: /gripper_controller/gripper_cmd
+      type: control_msgs/action/GripperCommand
+    bodies: [gripper]
+
+  - primitive_type: idle_in_region
+    subject: "ral.{robot_id}.cmd.motion.base"
+    ros:
+      kind: composite
+      steps:
+        - { kind: action_cancel, name: /navigate_to_pose }
+        - { kind: topic, name: /cmd_vel, type: geometry_msgs/msg/Twist, zero: true }
+    bodies: [base]
+
+  - primitive_type: estop
+    subject: "ral.{robot_id}.cmd.estop"
+    ros:
+      kind: composite
+      steps:
+        - { kind: service, name: /emergency_stop, type: std_srvs/srv/Trigger }
+        - { kind: action_cancel, name: /navigate_to_pose }
+        - { kind: action_cancel, name: /arm_controller/follow_joint_trajectory }
+        - { kind: topic, name: /cmd_vel, type: geometry_msgs/msg/Twist, zero: true }
+    coalesce: none
+    priority: estop
+    bodies: [base, arm, head, gripper]
+
+ros_to_nats:
+  - ros: { kind: topic, name: /joint_states, type: sensor_msgs/msg/JointState }
+    subject: "ral.{robot_id}.tel.motion.joints"
+    max_hz: 50
+    drop_fields: [effort]
+
+  - ros: { kind: tf, frames: [base_link, ee_link] }
+    subject: "ral.{robot_id}.tel.motion.pose"
+    max_hz: 10
+    also_put_kv: ["pose.base_link", "pose.ee_link"]
+
+  - ros: { kind: topic, name: /detections, type: vision_msgs/msg/Detection2DArray }
+    subject: "ral.{robot_id}.tel.perception.camera.meta"
+    max_hz: 10
+
+  - ros: { kind: topic, name: /diagnostics, type: diagnostic_msgs/msg/DiagnosticArray }
+    subject: "ral.{robot_id}.tel.health"
+    max_hz: 1
+
+  - ros: { kind: action_status, name: /navigate_to_pose }
+    subject: "ral.{robot_id}.tel.nav"
+    max_hz: events
+
+forbidden:
+  ros_topics_never_forward:
+    - /camera/image_raw
+    - /camera/depth/image_raw
+    - /points
+    - /imu/data
+  nats_subjects_bridge_must_not_subscribe:
+    - "ral.*.cycle.*.proposal"
+    - "ral.*.cmd.tool.>"
+    - "ral.*.cmd.speech"
