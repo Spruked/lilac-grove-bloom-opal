@@ -58,3 +58,56 @@ export const ACCOUNTS = [
   { name: "BRIDGE", pub: "tel.>, WS KV", sub: "cmd.motion.>, estop", note: "dumb I/O" },
   { name: "TOOLS", pub: "tel.tool", sub: "cmd.tool.*", note: "queue tool-workers" },
 ] as const;
+
+export const LATENCY_SLO = [
+  {
+    path: "Core-4 evaluate()",
+    hop: "in-process",
+    p50: "< 0.2 ms",
+    p99: "< 1 ms",
+    rule: "Pure functions",
+  },
+  {
+    path: "Tribunal req/reply",
+    hop: "Core NATS RR",
+    p50: "< 1 ms",
+    p99: "< 2 ms",
+    rule: "Onboard only",
+  },
+  {
+    path: "cmd.estop fan-out",
+    hop: "Core NATS",
+    p50: "< 0.3 ms",
+    p99: "< 1 ms",
+    rule: "PLC still owns STO",
+  },
+  {
+    path: "twist_base → /cmd_vel",
+    hop: "NATS + topic",
+    p50: "< 1 ms",
+    p99: "< 5 ms",
+    rule: "20 Hz coalesce separate",
+  },
+  {
+    path: "arm/head goal accept",
+    hop: "NATS + action",
+    p50: "< 5 ms",
+    p99: "< 15 ms",
+    rule: "Not execution time",
+  },
+  {
+    path: "Leaf → fleet",
+    hop: "WAN",
+    p50: "20–50 ms",
+    p99: "200 ms",
+    rule: "Never cmd/estop",
+  },
+] as const;
+
+export const STUB_BENCH = [
+  { path: "focus_on", p50: "3.6 µs", p99: "10.2 µs" },
+  { path: "estop", p50: "3.6 µs", p99: "10.1 µs" },
+  { path: "twist_base", p50: "3.5 µs", p99: "8.0 µs" },
+  { path: "stale etag drop", p50: "2.6 µs", p99: "5.5 µs" },
+  { path: "unknown drop", p50: "3.0 µs", p99: "21.2 µs" },
+] as const;

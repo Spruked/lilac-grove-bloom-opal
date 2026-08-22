@@ -1,0 +1,43 @@
+version: 1
+
+commands:
+  twist_base_max_hz: 20
+  twist_coalesce: latest_wins
+  action_in_flight_per_body: 1
+  estop_coalesce: none
+
+telemetry_max_hz:
+  tel.motion.joints: 50
+  tel.motion.pose: 10
+  tel.perception.camera.meta: 10
+  tel.health: 1
+  tel.nav: events
+
+watchdogs:
+  joint_states_timeout_ms: 100
+  nats_liveness_ms: 250
+
+# Onboard SLOs (local nats-server + ROS, same machine). Values in milliseconds.
+latency_slo_ms:
+  core4_inprocess:     { p50: 0.2, p99: 1.0, max: 2.0 }
+  tribunal_rr:         { p50: 1.0, p99: 2.0, max: 5.0 }
+  estop_fanout:        { p50: 0.3, p99: 1.0, max: 2.0 }
+  twist_to_cmd_vel:    { p50: 1.0, p99: 5.0, max: 10.0 }
+  action_goal_accept:  { p50: 5.0, p99: 15.0, max: 30.0 }
+  nav_goal_accept:     { p50: 5.0, p99: 20.0, max: 40.0 }
+  joints_tel_hop:      { p50: 2.0, p99: 5.0, max: 20.0 }
+  kv_worldstate:       { p50: 1.0, p99: 5.0, max: 10.0 }
+  jetstream_cycles:    { p50: null, p99: 5.0, max: null, blocking: false }
+  leaf_fleet:          { p50: 50, p99: 200, forbidden_on: [cmd, estop] }
+
+stub_bench:
+  date: "2026-08-21"
+  note: "Null I/O, in-process FakeNats. Not a robot."
+  n: 8000
+  budget_p99_us: 200
+  results_us:
+    focus_on_dispatch:       { p50: 3.62, p99: 10.23, p999: 30.16, max: 55.54 }
+    estop_dispatch:          { p50: 3.61, p99: 10.14, p999: 26.83, max: 47.63 }
+    twist_base_dispatch:     { p50: 3.50, p99: 7.95,  p999: 25.60, max: 46.01 }
+    stale_etag_drop:         { p50: 2.55, p99: 5.45,  p999: 20.59, max: 29.96 }
+    unknown_primitive_drop:  { p50: 2.95, p99: 21.18, p999: 28.11, max: 62.60 }

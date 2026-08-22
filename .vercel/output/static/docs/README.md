@@ -18,20 +18,22 @@ ral_ros_bridge/
 ├── SPEC.md                 Full contract
 ├── mapping.yaml            Primitive → ROS mapping (source of truth)
 ├── subjects.yaml           Subject tree
-├── rates.yaml              Telemetry rate limits
+├── rates.yaml              Rate limits + latency SLOs + stub bench
 ├── nats/accounts.conf      nkey / account ACLs
 ├── schemas/                JSON schemas
 └── ral_ros_bridge/         Python stub (no ROS/NATS required to unit-test)
     ├── messages.py
     ├── mapping.py
     ├── node.py
-    └── demo.py
+    ├── demo.py
+    └── bench.py            In-process hop latency
 ```
 
 ## Run the stub demo
 
 ```bash
 python -m ral_ros_bridge.demo
+python -m ral_ros_bridge.bench
 ```
 
-Requires Python 3.10+ and PyYAML (`pip install pyyaml`). The demo uses in-memory fakes — it does not start ROS or nats-server.
+Python 3.10+, stdlib only. Fakes only — no ROS, no nats-server. Bench fails if in-process p99 exceeds 200 µs.

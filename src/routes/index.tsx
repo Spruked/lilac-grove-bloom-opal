@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowDownToLine, Ban, Cable, Scale, Waypoints } from "lucide-react";
-import { ACCOUNTS, CMD_MAP, TEL_MAP } from "@/lib/bridge-mapping";
+import { ACCOUNTS, CMD_MAP, LATENCY_SLO, STUB_BENCH, TEL_MAP } from "@/lib/bridge-mapping";
 
 export const Route = createFileRoute("/")({ component: Home });
 
@@ -119,6 +119,58 @@ function Home() {
       </section>
 
       <section className="mt-10">
+        <h2 className="text-lg font-semibold text-fg">Latency budgets (onboard)</h2>
+        <p className="mt-1 text-sm text-muted">
+          Skill-bus hop only. JetStream and the cloud stay off cmd/estop. PLC
+          e-stop does not wait on this table. Stub dispatch is microseconds.
+        </p>
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[36rem] text-left text-sm">
+            <thead className="bg-elevated font-mono text-[11px] tracking-wide text-muted uppercase">
+              <tr>
+                <th className="px-3 py-2 font-medium">Path</th>
+                <th className="px-3 py-2 font-medium">Hop</th>
+                <th className="px-3 py-2 font-medium">p50</th>
+                <th className="px-3 py-2 font-medium">p99</th>
+                <th className="px-3 py-2 font-medium">Rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              {LATENCY_SLO.map((row) => (
+                <tr key={row.path} className="border-t border-border">
+                  <td className="px-3 py-2 text-[13px] text-fg">{row.path}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-muted">{row.hop}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-fg">{row.p50}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-primary">{row.p99}</td>
+                  <td className="px-3 py-2 text-[12px] text-muted">{row.rule}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+          <table className="w-full min-w-[20rem] text-left text-sm">
+            <thead className="bg-elevated font-mono text-[11px] tracking-wide text-muted uppercase">
+              <tr>
+                <th className="px-3 py-2 font-medium">Stub bench (Null I/O)</th>
+                <th className="px-3 py-2 font-medium">p50</th>
+                <th className="px-3 py-2 font-medium">p99</th>
+              </tr>
+            </thead>
+            <tbody>
+              {STUB_BENCH.map((row) => (
+                <tr key={row.path} className="border-t border-border">
+                  <td className="px-3 py-2 font-mono text-[12px] text-fg">{row.path}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-muted">{row.p50}</td>
+                  <td className="px-3 py-2 font-mono text-[12px] text-muted">{row.p99}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mt-10">
         <h2 className="text-lg font-semibold text-fg">nkey accounts</h2>
         <ul className="mt-4 divide-y divide-border overflow-hidden rounded-lg border border-border bg-surface">
           {ACCOUNTS.map((a) => (
@@ -140,7 +192,7 @@ function Home() {
       <p className="mt-10 font-mono text-xs leading-relaxed text-muted">
         python -m ral_ros_bridge.demo
         <br />
-        python -m ral_core.demo
+        python -m ral_ros_bridge.bench
       </p>
     </main>
   );

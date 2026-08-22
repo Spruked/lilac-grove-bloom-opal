@@ -1,0 +1,26 @@
+version: 1
+pattern: "ral.{robot_id}.{kind}.{...}"
+
+subjects:
+  proposal:    "ral.{robot_id}.cycle.{cycle_id}.proposal"
+  verdict:     "ral.{robot_id}.cycle.{cycle_id}.verdict"
+  tribunal_rr: "ral.{robot_id}.tribunal.evaluate"
+  cmd_motion:  "ral.{robot_id}.cmd.motion.{body}"
+  cmd_tool:    "ral.{robot_id}.cmd.tool.{tool_id}"
+  cmd_speech:  "ral.{robot_id}.cmd.speech"
+  cmd_estop:   "ral.{robot_id}.cmd.estop"
+  tel_motion:  "ral.{robot_id}.tel.motion.{body}"
+  tel_tool:    "ral.{robot_id}.tel.tool"
+  tel_nav:     "ral.{robot_id}.tel.nav"
+  tel_health:  "ral.{robot_id}.tel.health"
+  tel_perc:    "ral.{robot_id}.tel.perception.{stream}"
+  ws_changed:  "ral.{robot_id}.ws.changed"
+
+kv:
+  bucket: "WS"
+  key: "{robot_id}"
+
+jetstream:
+  cycles_stream: "RAL_CYCLES"
+  subjects: ["ral.*.cycle.>", "ral.*.cmd.tool.>", "ral.*.cmd.estop"]
+  note: "Do not persist twist samples or joint telemetry on this stream."

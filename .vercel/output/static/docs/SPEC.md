@@ -148,3 +148,71 @@ Planner is the only software allowed to publish `cmd.*`, and only after Core-4 `
 - MCP tool workers
 - Leaf-node / fleet topology
 - Replacing `rmw` (use DDS or `rmw_zenoh` *inside* ROS; this bus is beside ROS)
+
+---
+
+## 10. Latency budgets
+
+Two clocks, never mixed:
+
+1. **Skill-bus hop** — planner `allow` → NATS core → bridge → ROS interface. This spec.
+2. **Physics / safety** — `ros2_control`, EtherCAT, PLC STO. Not this spec. PLC e-stop must not wait on NATS.
+
+Core NATS on a local board is typically **sub-millisecond**; localhost request RTT is on the order of **~80–150 µs**. JetStream adds persistence cost (~0.1–1 ms for small payloads) and is **forbidden on the cmd/estop path**.
+
+### 10.1 Onboard SLOs (one robot, local nats-server, same machine as ROS)
+
+End-to-end = NATS fabric + bridge + ROS client library. Not LLM. Not Nav2 execution.
+
+| Path | Transport | p50 | p99 | max (drop / fail) | Notes |
+|---|---|---|---|---|---|
+| Core-4 `evaluate()` in-process | function call | < 0.2 ms | < 1 ms | 2 ms | Pure Python over a snapshot |
+| Tribunal request-reply | Core NATS RR | < 1 ms | < 2 ms | 5 ms → `ask`/idle | Onboard only |
+| `cmd.estop` fan-out | Core NATS, no JS, no queue group | < 0.3 ms | < 1 ms | 2 ms | Mirror only; PLC is faster |
+| `twist_base` → `/cmd_vel` | Core NATS + topic | < 1 ms | < 5 ms | 10 ms drop (latest-wins) | 20 Hz cap is separate |
+| `focus_on` / `arm_follow` goal accept | Core NATS + ROS action | < 5 ms | < 15 ms | 30 ms cancel | Execution time is not the hop |
+| `nav_to_pose` goal accept | Core NATS + Nav2 action | < 5 ms | < 20 ms | 40 ms | Driving the path is seconds |
+| Joint tel `50 Hz` | Core NATS | hop < 2 ms | < 5 ms | skip sample | Period is 20 ms |
+| KV WorldState put + `ws.changed` | JetStream KV | < 1 ms | < 5 ms | 10 ms | Not on cmd path |
+| Persist `RAL_CYCLES` | JetStream | async | p99 < 5 ms write | never block cmd | Audit, not control |
+| Leaf → fleet hub | WAN | 20–200 ms | — | **never** cmd/estop | Cognition uplink only |
+| LLM proposal | model | 100 ms–2 s | — | not a budget | Outside the spinal cord |
+
+**Hard rules**
+
+- Cmd and estop = **Core NATS**. If a write waits on disk, it is a bug.
+- Cloud RTT is not in the motion budget. Tribunal runs onboard.
+- 20 Hz twist coalesce is *intentional delay* (latest sample), not hop latency. Measure hop with coalesce disabled or on the sample that is sent.
+- ROS action **result** (goal completed) is a different metric; this table is **goal accepted / topic published**.
+
+### 10.2 Instrumentation
+
+Stamp envelopes:
+
+- `t_plan` — planner after `allow`
+- `t_bridge_rx` — bridge `_on_cmd` entry (`robot_time` or monotonic)
+- `t_ros_tx` — just before `publish_topic` / `send_action`
+
+`hop_ms = t_ros_tx - t_plan`. Log p50/p99 per primitive every 10 s. Alert if estop p99 > 1 ms onboard.
+
+### 10.3 Stub measurement (this package, Null I/O)
+
+Not a substitute for a robot bench. Proves the Python dispatch is << budget.
+
+```bash
+python -m ral_ros_bridge.bench
+```
+
+In-process p99 budget for all stub paths: **200 µs**. Fail the bench if exceeded.
+
+Measured on this package (2026-08-21, n=8000, Null I/O):
+
+| Path | p50 | p99 | p999 | max |
+|---|---|---|---|---|
+| `focus_on` dispatch | 3.6 µs | 10.2 µs | 30 µs | 56 µs |
+| `estop` dispatch | 3.6 µs | 10.1 µs | 27 µs | 48 µs |
+| `twist_base` dispatch | 3.5 µs | 8.0 µs | 26 µs | 46 µs |
+| stale `world_etag` drop | 2.6 µs | 5.5 µs | 21 µs | 30 µs |
+| unknown primitive drop | 3.0 µs | 21.2 µs | 28 µs | 63 µs |
+
+The stub is two orders of magnitude inside the 200 µs in-process budget and inside the 1–5 ms onboard skill-bus SLOs. Remaining latency on a real robot is NATS + ROS RMW + controller, not this mapping table.

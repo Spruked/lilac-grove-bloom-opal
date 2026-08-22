@@ -1,6 +1,6 @@
 import { v as require_jsx_runtime } from "../_libs/@tanstack/react-router+[...].mjs";
 import { a as Ban, i as Cable, o as ArrowDownToLine, r as Scale, t as Waypoints } from "../_libs/lucide-react.mjs";
-//#region node_modules/.nitro/vite/services/ssr/assets/routes-OI4YR07B.js
+//#region node_modules/.nitro/vite/services/ssr/assets/routes-i0pXHXMY.js
 var import_jsx_runtime = require_jsx_runtime();
 var CMD_MAP = [
 	{
@@ -103,6 +103,77 @@ var ACCOUNTS = [
 		pub: "tel.tool",
 		sub: "cmd.tool.*",
 		note: "queue tool-workers"
+	}
+];
+var LATENCY_SLO = [
+	{
+		path: "Core-4 evaluate()",
+		hop: "in-process",
+		p50: "< 0.2 ms",
+		p99: "< 1 ms",
+		rule: "Pure functions"
+	},
+	{
+		path: "Tribunal req/reply",
+		hop: "Core NATS RR",
+		p50: "< 1 ms",
+		p99: "< 2 ms",
+		rule: "Onboard only"
+	},
+	{
+		path: "cmd.estop fan-out",
+		hop: "Core NATS",
+		p50: "< 0.3 ms",
+		p99: "< 1 ms",
+		rule: "PLC still owns STO"
+	},
+	{
+		path: "twist_base → /cmd_vel",
+		hop: "NATS + topic",
+		p50: "< 1 ms",
+		p99: "< 5 ms",
+		rule: "20 Hz coalesce separate"
+	},
+	{
+		path: "arm/head goal accept",
+		hop: "NATS + action",
+		p50: "< 5 ms",
+		p99: "< 15 ms",
+		rule: "Not execution time"
+	},
+	{
+		path: "Leaf → fleet",
+		hop: "WAN",
+		p50: "20–50 ms",
+		p99: "200 ms",
+		rule: "Never cmd/estop"
+	}
+];
+var STUB_BENCH = [
+	{
+		path: "focus_on",
+		p50: "3.6 µs",
+		p99: "10.2 µs"
+	},
+	{
+		path: "estop",
+		p50: "3.6 µs",
+		p99: "10.1 µs"
+	},
+	{
+		path: "twist_base",
+		p50: "3.5 µs",
+		p99: "8.0 µs"
+	},
+	{
+		path: "stale etag drop",
+		p50: "2.6 µs",
+		p99: "5.5 µs"
+	},
+	{
+		path: "unknown drop",
+		p50: "3.0 µs",
+		p99: "21.2 µs"
 	}
 ];
 function Home() {
@@ -277,6 +348,113 @@ function Home() {
 			}),
 			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
 				className: "mt-10",
+				children: [
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
+						className: "text-lg font-semibold text-fg",
+						children: "Latency budgets (onboard)"
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("p", {
+						className: "mt-1 text-sm text-muted",
+						children: "Skill-bus hop only. JetStream and the cloud stay off cmd/estop. PLC e-stop does not wait on this table. Stub dispatch is microseconds."
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "mt-4 overflow-x-auto rounded-lg border border-border",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
+							className: "w-full min-w-[36rem] text-left text-sm",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
+								className: "bg-elevated font-mono text-[11px] tracking-wide text-muted uppercase",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "Path"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "Hop"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "p50"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "p99"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "Rule"
+									})
+								] })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", { children: LATENCY_SLO.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+								className: "border-t border-border",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 text-[13px] text-fg",
+										children: row.path
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-muted",
+										children: row.hop
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-fg",
+										children: row.p50
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-primary",
+										children: row.p99
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 text-[12px] text-muted",
+										children: row.rule
+									})
+								]
+							}, row.path)) })]
+						})
+					}),
+					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("div", {
+						className: "mt-4 overflow-x-auto rounded-lg border border-border",
+						children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("table", {
+							className: "w-full min-w-[20rem] text-left text-sm",
+							children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("thead", {
+								className: "bg-elevated font-mono text-[11px] tracking-wide text-muted uppercase",
+								children: /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", { children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "Stub bench (Null I/O)"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "p50"
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("th", {
+										className: "px-3 py-2 font-medium",
+										children: "p99"
+									})
+								] })
+							}), /* @__PURE__ */ (0, import_jsx_runtime.jsx)("tbody", { children: STUB_BENCH.map((row) => /* @__PURE__ */ (0, import_jsx_runtime.jsxs)("tr", {
+								className: "border-t border-border",
+								children: [
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-fg",
+										children: row.path
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-muted",
+										children: row.p50
+									}),
+									/* @__PURE__ */ (0, import_jsx_runtime.jsx)("td", {
+										className: "px-3 py-2 font-mono text-[12px] text-muted",
+										children: row.p99
+									})
+								]
+							}, row.path)) })]
+						})
+					})
+				]
+			}),
+			/* @__PURE__ */ (0, import_jsx_runtime.jsxs)("section", {
+				className: "mt-10",
 				children: [/* @__PURE__ */ (0, import_jsx_runtime.jsx)("h2", {
 					className: "text-lg font-semibold text-fg",
 					children: "nkey accounts"
@@ -311,7 +489,7 @@ function Home() {
 				children: [
 					"python -m ral_ros_bridge.demo",
 					/* @__PURE__ */ (0, import_jsx_runtime.jsx)("br", {}),
-					"python -m ral_core.demo"
+					"python -m ral_ros_bridge.bench"
 				]
 			})
 		]
